@@ -135,9 +135,8 @@ system.onEntityDeath = function(eventData) {
             this.executeCommand(`/scoreboard players add ${murdererName} murdercount 1`, (commandData) => this.commandCallback(commandData));
         }
 
-        let BroadcastEventData = this.createEventData("minecraft:display_chat_event");
-        BroadcastEventData.data.message = `RIP ${playerName} @ ${positionCoords}`;
-        this.broadcastEvent("minecraft:display_chat_event", BroadcastEventData);
+        // send the message to the chat window for all players
+        this.logToChat(`RIP ${playerName} @ ${positionCoords}`);
     } else if (eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player") {
         // the player killed a mob of some kind...
         let playerStats = this.getPlayerStats(eventData.data.killer);
