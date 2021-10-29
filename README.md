@@ -8,6 +8,8 @@ These data points are written to the chat log but not stored by the system for l
 ### Death Coordinates
 When a player dies, his/her coordinates are written to the chat log ... making it easier to retrieve your stuff, get help from your fellow players in retrieving your stuff, or maybe helping your father find his way back to where he was!
 
+NOTE: The death coordinates work in all dimensions (Overworld, Nether, and End), but currently the pack cannot determine the user's current dimension. Hopefully players can remember at least that much!
+
 ## Scoreboard Statistics
 These data points are written to Minecraft scoreboards which are stored with the world, allowing for long-term statistics tracking.
 
