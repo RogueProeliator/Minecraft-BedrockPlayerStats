@@ -4,9 +4,13 @@ let globalVars = {};
 //=====================================================================================
 // Configuration Options
 //=====================================================================================
-globalVars.afkStartMins     = 5;
-globalVars.playTimeAwardMin = 30;
-globalVars.playTimeAwardId  = "minecraft:diamond";
+globalVars.updateFreqTicks    = 600;
+
+globalVars.afkStartMins       = 5;
+
+globalVars.playTimeRewardUsed = true;
+globalVars.playTimeAwardMin   = 2;
+globalVars.playTimeAwardId    = "minecraft:diamond";
 
 
 //=====================================================================================
@@ -53,8 +57,8 @@ system.update = function() {
     globalVars.tickNumber++;
 
     // update the players statistics from their player stats component every
-    // 20 seconds to avoid overloading the system with updates
-    if (globalVars.tickNumber === 720) {
+    // 30 seconds to avoid overloading the system with updates
+    if (globalVars.tickNumber % globalVars.updateFreqTicks === 0 || globalVars.tickNumber === 1200) {
         let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
         let playerCount   = onlinePlayers.length;
 
@@ -85,25 +89,29 @@ system.update = function() {
             }
             
             // update the playtime statistics for the player
-            let isAFK = Math.floor(Math.abs(Date() - playerStats.data.lastMovement) / 60000) >= globalVars.afkStartMins;
+            if (globalVars.tickNumber === 1200) {
+                let isAFK = Math.floor(Math.abs(Date() - playerStats.data.lastMovement) / 60000) >= globalVars.afkStartMins;
 
-            let afkScoreboardVal = isAFK ? 1 : 0;
-            this.executeCommand(`/scoreboard players set ${playerName} is_afk ${afkScoreboardVal}`, (commandData) => this.commandCallback(commandData));
+                let afkScoreboardVal = isAFK ? 1 : 0;
+                this.executeCommand(`/scoreboard players set ${playerName} is_afk ${afkScoreboardVal}`, (commandData) => this.commandCallback(commandData));
 
-            let timeUpdateScoreboard = isAFK ? "afk_minutes" : "playtime_minutes";
-            this.executeCommand(`/scoreboard players add ${playerName} ${timeUpdateScoreboard} 1`);
+                let timeUpdateScoreboard = isAFK ? "afk_minutes" : "playtime_minutes";
+                this.executeCommand(`/scoreboard players add ${playerName} ${timeUpdateScoreboard} 1`, (commandData) => this.commandCallback(commandData));
 
-            let awardPlaytimeBonus = Math.floor(Math.abs(Date() - playerStats.data.lastPlayTimeAward) / 60000) >= globalVars.playTimeAwardMin;
-            if (awardPlaytimeBonus) {
-                this.executeCommand(`/give ${playerName} ${globalVars.playTimeAwardId} 1`);
-                playerStats.data.lastPlayTimeAward = Date();
-            }       
+                let awardPlaytimeBonus = globalVars.playTimeRewardUsed === true && isAFK === false && (Math.floor(Math.abs(Date() - playerStats.data.lastPlayTimeAward) / 60000) >= globalVars.playTimeAwardMin);
+                if (awardPlaytimeBonus) {
+                    this.executeCommand(`/give ${playerName} ${globalVars.playTimeAwardId} 1`, (commandData) => this.commandCallback(commandData));
+                    this.executeCommand(`/msg ${playerName} You've received a playtime award for ${globalVars.playTimeAwardMin} minutes of play`, (commandData) => this.commandCallback(commandData))
+                    playerStats.data.lastPlayTimeAward = Date();
+                }       
+            }
 
             // save the updates to the stats back to the player/component
             this.applyComponentChanges(player, playerStats);
         }
-
-        globalVars.tickNumber = 0;
+        
+        if (globalVars.tickNumber === 1200)
+            globalVars.tickNumber = 0;
     }   
 }
 
@@ -127,10 +135,14 @@ system.onEntityDeath = function(eventData) {
         let positionCoords = `${Math.round(position.data.x)}, ${Math.round(position.data.y)}, ${Math.round(position.data.z)}`;
         
         // record the death in the death counter scoreboard
+        // ensure that all of the scoreboards have been added for the player
+        this.executeCommand("/scoreboard objectives add deathcount dummy Deaths", (commandData) => this.commandCallback(commandData));
         this.executeCommand(`/scoreboard players add ${playerName} deathcount 1`, (commandData) => this.commandCallback(commandData));
         
         // if the killer was another player, record that now
         if (eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player") {
+            this.executeCommand("/scoreboard objectives add murdercount dummy Murders", (commandData) => this.commandCallback(commandData));
+
             let murdererName = this.getComponent(eventData.data.killer, "minecraft:nameable").data.name;
             this.executeCommand(`/scoreboard players add ${murdererName} murdercount 1`, (commandData) => this.commandCallback(commandData));
         }
