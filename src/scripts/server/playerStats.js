@@ -9,7 +9,7 @@ globalVars.updateFreqTicks    = 600;
 globalVars.afkStartMins       = 5;
 
 globalVars.playTimeRewardUsed = true;
-globalVars.playTimeAwardMin   = 2;
+globalVars.playTimeAwardMin   = 30;
 globalVars.playTimeAwardId    = "minecraft:diamond";
 
 
@@ -27,7 +27,6 @@ globalVars.playersQuery     = null;
 // the system will call this routine in order to initialize the script -- this is called prior
 // to the world being ready and players joining
 system.initialize = function() {
-    this.listenForEvent("minecraft:entity_move"           , (eventData) => this.onEntityMoved(eventData));
     this.listenForEvent("minecraft:player_placed_block"   , (eventData) => this.onPlayerPlacedBlock(eventData));
     this.listenForEvent("minecraft:player_destroyed_block", (eventData) => this.onPlayerDestroyedBlock(eventData));
     this.listenForEvent("minecraft:entity_death"          , (eventData) => this.onEntityDeath(eventData));
@@ -41,10 +40,14 @@ system.initialize = function() {
               , blocksPlaced      : 0
               , hostileMobsKilled : 0
               , gentleMobsKilled  : 0
-              , lastMovement      : Date()
-              , lastPlayTimeAward : Date()
+              , lastPosX          : 0
+              , lastPosY          : 0
+              , lastPosZ          : 0
+              , lastMovement      : 0
+              , lastPlayTimeAward : 0
               , initialized       : false
-        });
+        }
+    );
 };
 
 
@@ -57,73 +60,89 @@ system.update = function() {
     globalVars.tickNumber++;
 
     // update the players statistics from their player stats component every
-    // 30 seconds to avoid overloading the system with updates
+    // 30 seconds (or as configured by user) to avoid overloading the system with updates
     if (globalVars.tickNumber % globalVars.updateFreqTicks === 0 || globalVars.tickNumber === 1200) {
         let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
         let playerCount   = onlinePlayers.length;
 
         for (let index = 0; index < playerCount; ++index) {
-            let player      = onlinePlayers[index];
-            let playerName  = this.getComponent(player, "minecraft:nameable").data.name;
-            let playerStats = this.getPlayerStats(player);
+            try {
+                let player      = onlinePlayers[index];
+                let playerName  = this.getComponent(player, "minecraft:nameable").data.name;
+                let playerStats = this.getPlayerStats(player);
 
-            // update all of the temporary stats that we have saved in the player stats component
-            if (playerStats.data.blocksBroken > 0) {
-                this.executeCommand(`/scoreboard players add ${playerName} blocks_broken ${playerStats.data.blocksBroken}`, (commandData) => this.commandCallback(commandData));
-                playerStats.data.blocksBroken = 0;
+                // update the player's movement since we already have the player entity and stats
+                this.updatePlayerPos(player, playerStats);
+
+                // update all of the temporary stats that we have saved in the player stats component
+                if (playerStats.data.blocksBroken > 0) {
+                    this.executeCommand(`/scoreboard players add ${playerName} blocks_broken ${playerStats.data.blocksBroken}`, (commandData) => this.commandCallback(commandData));
+                    playerStats.data.blocksBroken = 0;
+                }
+
+                if (playerStats.data.blocksPlaced > 0) {
+                    this.executeCommand(`/scoreboard players add ${playerName} blocks_placed ${playerStats.data.blocksPlaced}`, (commandData) => this.commandCallback(commandData));
+                    playerStats.data.blocksPlaced = 0;
+                }
+
+                if (playerStats.data.hostileMobsKilled > 0) {
+                    this.executeCommand(`/scoreboard players add ${playerName} hostiles_killed ${playerStats.data.hostileMobsKilled}`, (commandData) => this.commandCallback(commandData));
+                    playerStats.data.hostileMobsKilled = 0;
+                }
+
+                if (playerStats.data.gentleMobsKilled > 0) {
+                    this.executeCommand(`/scoreboard players add ${playerName} peaceful_killed ${playerStats.data.gentleMobsKilled}`, (commandData) => this.commandCallback(commandData));
+                    playerStats.data.gentleMobsKilled = 0;
+                }
+                
+                // update the playtime statistics for the player
+                if (globalVars.tickNumber === 1200) {
+                    let now          = Date.now();
+                    let minLastMove  = playerStats.data.lastMovement === 0 ? 0 : Math.floor(Math.abs(now - playerStats.data.lastMovement) / 60000);
+                    let isAFK        = minLastMove >= globalVars.afkStartMins;
+
+                    let afkScoreboardVal = isAFK ? 1 : 0;
+                    this.executeCommand(`/scoreboard players set ${playerName} is_afk ${afkScoreboardVal}`, (commandData) => this.commandCallback(commandData));
+
+                    let timeUpdateScoreboard = isAFK ? "afk_minutes" : "playtime_minutes";
+                    this.executeCommand(`/scoreboard players add ${playerName} ${timeUpdateScoreboard} 1`, (commandData) => this.commandCallback(commandData));
+
+                    // if the user just went AFK, then announce to the board...
+                    if (isAFK && minLastMove === globalVars.afkStartMins)
+                        this.logToChat(`${playerName} has gone AFK`);
+
+                    let awardPlaytimeBonus = globalVars.playTimeRewardUsed === true && isAFK === false && playerStats.data.lastPlayTimeAward !== 0 && (Math.floor(Math.abs(now - playerStats.data.lastPlayTimeAward) / 60000) >= globalVars.playTimeAwardMin);
+                    if (awardPlaytimeBonus) {
+                        this.executeCommand(`/give ${playerName} ${globalVars.playTimeAwardId} 1`, (commandData) => this.commandCallback(commandData));
+                        this.executeCommand(`/msg ${playerName} You've received a playtime award for ${globalVars.playTimeAwardMin} minutes of play`, (commandData) => this.commandCallback(commandData))
+                        playerStats.data.lastPlayTimeAward = Date.now();
+                    }       
+                }
+
+                // save the updates to the stats back to the player/component
+                this.applyComponentChanges(player, playerStats);
+            } catch(err) {
+
             }
-
-            if (playerStats.data.blocksPlaced > 0) {
-                this.executeCommand(`/scoreboard players add ${playerName} blocks_placed ${playerStats.data.blocksPlaced}`, (commandData) => this.commandCallback(commandData));
-                playerStats.data.blocksPlaced = 0;
-            }
-
-            if (playerStats.data.hostileMobsKilled > 0) {
-                this.executeCommand(`/scoreboard players add ${playerName} hostiles_killed ${playerStats.data.hostileMobsKilled}`, (commandData) => this.commandCallback(commandData));
-                playerStats.data.hostileMobsKilled = 0;
-            }
-
-            if (playerStats.data.gentleMobsKilled > 0) {
-                this.executeCommand(`/scoreboard players add ${playerName} peaceful_killed ${playerStats.data.gentleMobsKilled}`, (commandData) => this.commandCallback(commandData));
-                playerStats.data.gentleMobsKilled = 0;
-            }
-            
-            // update the playtime statistics for the player
-            if (globalVars.tickNumber === 1200) {
-                let isAFK = Math.floor(Math.abs(Date() - playerStats.data.lastMovement) / 60000) >= globalVars.afkStartMins;
-
-                let afkScoreboardVal = isAFK ? 1 : 0;
-                this.executeCommand(`/scoreboard players set ${playerName} is_afk ${afkScoreboardVal}`, (commandData) => this.commandCallback(commandData));
-
-                let timeUpdateScoreboard = isAFK ? "afk_minutes" : "playtime_minutes";
-                this.executeCommand(`/scoreboard players add ${playerName} ${timeUpdateScoreboard} 1`, (commandData) => this.commandCallback(commandData));
-
-                let awardPlaytimeBonus = globalVars.playTimeRewardUsed === true && isAFK === false && (Math.floor(Math.abs(Date() - playerStats.data.lastPlayTimeAward) / 60000) >= globalVars.playTimeAwardMin);
-                if (awardPlaytimeBonus) {
-                    this.executeCommand(`/give ${playerName} ${globalVars.playTimeAwardId} 1`, (commandData) => this.commandCallback(commandData));
-                    this.executeCommand(`/msg ${playerName} You've received a playtime award for ${globalVars.playTimeAwardMin} minutes of play`, (commandData) => this.commandCallback(commandData))
-                    playerStats.data.lastPlayTimeAward = Date();
-                }       
-            }
-
-            // save the updates to the stats back to the player/component
-            this.applyComponentChanges(player, playerStats);
         }
         
         if (globalVars.tickNumber === 1200)
             globalVars.tickNumber = 0;
-    }   
-}
+    } else if (globalVars.tickNumber % 100 === 0) {
+        // this is a tick separate than the configured update which fires every 5 seconds in order to
+        // update the player's current position and movement information
+        let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
+        let playerCount   = onlinePlayers.length;
 
-// this handler fires whenever an entity has moved within the world... if this is a
-// player then we may update his/her stats (for AFK and time played calculations)
-system.onEntityMoved = function(eventData) {
-    if (eventData.data.entity.__identifier__ == "minecraft:player") {
-        let playerStats = this.getPlayerStats(eventData.data.entity);
-        playerStats.data.lastMovement = Date();
-        this.applyComponentChanges(eventData.data.entity, playerStats);
+        for (let index = 0; index < playerCount; ++index) {
+            let player      = onlinePlayers[index];
+            let playerStats = this.getPlayerStats(player);
+
+            if (this.updatePlayerPos(player, playerStats))
+                this.applyComponentChanges(player, playerStats);
+        }   
     }
-};
+}
 
 // handler that fires whenever any entity in the world has died; if the
 // death is a player then record his/her death (and murderer, if applicable)
@@ -189,7 +208,9 @@ system.getPlayerStats = function(entity) {
     else {
         // this is the first time that the player has been seen this go-around; create a new stats
         // component for the player
-        let playerStats = this.createComponent(entity, "rogueproeliator:playerStats");
+        let playerStats                    = this.createComponent(entity, "rogueproeliator:playerStats");
+        playerStats.data.lastMovement      = Date.now();
+        playerStats.data.lastPlayTimeAward = Date.now();
 
         // ensure that all of the scoreboards have been added for the player
         this.executeCommand("/scoreboard objectives add deathcount dummy Deaths"                     , (commandData) => this.commandCallback(commandData));
@@ -207,6 +228,24 @@ system.getPlayerStats = function(entity) {
         return playerStats;
     }
 };
+
+// determine whether or not the player has moved since the last check of his/her position... updates
+// the playerStats as required and returns a true/false indicating if the player has moved
+system.updatePlayerPos = function(player, playerStats) {
+    let position = this.getComponent(player, "minecraft:position");
+    let newPosX  = Math.round(position.data.x);
+    let newPosY  = Math.round(position.data.y);
+    let newPosZ  = Math.round(position.data.z);
+    let isMove   = newPosX !== playerStats.data.lastPosX || newPosY !== playerStats.data.lastPosY || newPosZ !== playerStats.data.lastPosZ;
+    if (isMove) {
+        playerStats.data.lastPosX     = newPosX;
+        playerStats.data.lastPosY     = newPosY;
+        playerStats.data.lastPosZ     = newPosZ;
+        playerStats.data.lastMovement = Date.now();
+    }
+
+    return isMove;
+}
 
 // builds an array that stores the list of mobs considered hostile as keys into the
 // array, to be used like a hash lookup
@@ -254,7 +293,7 @@ function createHostileMobArray() {
 // dummy function that may be used to debug command calls as necessary; in production
 // should not do anything
 system.commandCallback = function (commandData) {
-    
+
 };
 
 // This is just a helper function that simplifies logging data to the console.
