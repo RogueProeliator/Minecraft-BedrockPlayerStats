@@ -86,7 +86,7 @@ system.update = function() {
 
     if (globalVars.tickNumber === 1200)
         globalVars.tickNumber = 0;
-}
+};
 
 // handler that fires whenever any entity in the world has died; if the
 // death is a player then record his/her death (and murderer, if applicable)
@@ -132,7 +132,7 @@ system.onPlayerPlacedBlock = function(eventData) {
         let playerName = this.getComponent(eventData.data.player, "minecraft:nameable").data.name;
         this.executeCommand(`/scoreboard players add ${playerName} blocks_placed 1`, (commandData) => this.commandCallback(commandData));
     }
-}
+};
 
 // handler that fires whenever the player has broken a block... this may happen a bunch
 // so should update just the component, not the scoreboard directly
@@ -164,8 +164,8 @@ system.getPlayerStats = function(entity) {
         playerStats.data.lastPlayTimeAward = Date.now();
 
         // ensure that all of the scoreboards have been added for the player
-        this.executeCommand("/scoreboard objectives add deathcount dummy Deaths"                     , (commandData) => this.commandCallback(commandData));
-        this.executeCommand("/scoreboard objectives add murdercount dummy Murders"                   , (commandData) => this.commandCallback(commandData));
+        this.executeCommand('/scoreboard objectives add deathcount dummy Deaths'                     , (commandData) => this.commandCallback(commandData));
+        this.executeCommand('/scoreboard objectives add murdercount dummy Murders'                   , (commandData) => this.commandCallback(commandData));
 
         this.executeCommand('/scoreboard objectives add is_afk dummy "Is AFK"'                       , (commandData) => this.commandCallback(commandData));
         this.executeCommand('/scoreboard objectives add playtime_minutes dummy "Active Time"'        , (commandData) => this.commandCallback(commandData));
@@ -182,7 +182,7 @@ system.getPlayerStats = function(entity) {
 
 // this routine will update all of the cached player stats  to the proper scoreboards
 // (such as blocks broken and destroyed)
-system.updateAllPlayerStats = async function(updatePosition) {
+system.updateAllPlayerStats = function(updatePosition) {
     let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
     let playerCount   = onlinePlayers.length;
 
@@ -197,7 +197,7 @@ system.updateAllPlayerStats = async function(updatePosition) {
                 this.updatePlayerPos(player, playerStats);
 
             // update all of the temporary stats that we have saved in the player stats component
-            if (globalVars.trackBlockStats === true && globalVars.statsUseComponent) {
+            if (globalVars.trackBlockStats === true) {
                 if (playerStats.data.blocksBroken > 0) {
                     this.executeCommand(`/scoreboard players add ${playerName} blocks_broken ${playerStats.data.blocksBroken}`, (commandData) => this.commandCallback(commandData));
                     playerStats.data.blocksBroken = 0;
@@ -209,7 +209,7 @@ system.updateAllPlayerStats = async function(updatePosition) {
                 }
             }
 
-            if (globalVars.trackMobsKilled === true && globalVars.statsUseComponent) {
+            if (globalVars.trackMobsKilled === true) {
                 if (playerStats.data.hostileMobsKilled > 0) {
                     this.executeCommand(`/scoreboard players add ${playerName} hostiles_killed ${playerStats.data.hostileMobsKilled}`, (commandData) => this.commandCallback(commandData));
                     playerStats.data.hostileMobsKilled = 0;
@@ -240,22 +240,22 @@ system.updateAllPlayerStats = async function(updatePosition) {
                 let awardPlaytimeBonus = globalVars.playTimeRewardUsed === true && isAFK === false && playerStats.data.lastPlayTimeAward !== 0 && (Math.floor(Math.abs(now - playerStats.data.lastPlayTimeAward) / 60000) >= globalVars.playTimeAwardMin);
                 if (awardPlaytimeBonus) {
                     this.executeCommand(`/give ${playerName} ${globalVars.playTimeAwardId} 1`, (commandData) => this.commandCallback(commandData));
-                    this.executeCommand(`/msg ${playerName} You've received a playtime award for ${globalVars.playTimeAwardMin} minutes of play`, (commandData) => this.commandCallback(commandData))
-                    playerStats.data.lastPlayTimeAward = Date.now();
+                    this.executeCommand(`/msg ${playerName} You've received a playtime award for ${globalVars.playTimeAwardMin} minutes of play`, (commandData) => this.commandCallback(commandData));
+                    playerStats.data.lastPlayTimeAward = now;
                 }       
             }
 
             // save the updates to the stats back to the player/component
             this.applyComponentChanges(player, playerStats);
         } catch(err) {
-            // TODO: how do we log this error condition
+            this.logToChat('WARNING: Unable to save player stats');
         }
     }
-}
+};
 
 // will update the player positions (in their stats) for each online player on the
 // server... fires off asynchronously so as not to block ticks
-system.updateAllPlayerPos = async function() {
+system.updateAllPlayerPos = function() {
     try {
         let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
         let playerCount   = onlinePlayers.length;
@@ -268,13 +268,13 @@ system.updateAllPlayerPos = async function() {
                 if (this.updatePlayerPos(player, playerStats))
                     this.applyComponentChanges(player, playerStats);
             } catch(err) {
-                // TODO: how do we properly log this error condition
+                this.logToChat('WARNING: Unable to update individual player position');
             }
         }   
     } catch(err) {
-        // TODO: how do we properly log this error condition
+        this.logToChat('WARNING: Unable to update player positions');
     }
-}
+};
 
 // determine whether or not the player has moved since the last check of his/her position... updates
 // the playerStats as required and returns a true/false indicating if the player has moved
@@ -293,12 +293,12 @@ system.updatePlayerPos = function(player, playerStats) {
     }
 
     return isMove;
-}
+};
 
 // builds an array that stores the list of mobs considered hostile as keys into the
 // array, to be used like a hash lookup
 function createHostileMobArray() {
-    hostileMobs = [];
+    let hostileMobs = [];
     hostileMobs["minecraft:blaze"]                = true;
     hostileMobs["minecraft:cave_spider"]          = true;
     hostileMobs["minecraft:creeper"]              = true;
@@ -350,28 +350,28 @@ system.logToChat = function (...items) {
 	const toString = (item) => {
 		switch (Object.prototype.toString.call(item)) {
 			case '[object Undefined]':
-				return 'undefined'
+				return 'undefined';
 			case '[object Null]':
-				return 'null'
+				return 'null';
 			case '[object String]':
-				return `"${item}"`
+				return `"${item}"`;
 			case '[object Array]':
-				const array = item.map(toString)
-				return `[${array.join(', ')}]`
+				const array = item.map(toString);
+				return `[${array.join(', ')}]`;
 			case '[object Object]':
 				const object = Object.keys(item).map(
 					(key) => `${key}: ${toString(item[key])}`
-				)
-				return `{${object.join(', ')}}`
+				);
+				return `{${object.join(', ')}}`;
 			case '[object Function]':
-				return item.toString()
+				return item.toString();
 			default:
-				return item
+				return item;
 		}
-	}
+	};
 
     // join the string array items into a single string and print it to the world's chat.
-	const chatEvent        = this.createEventData('minecraft:display_chat_event')
-	chatEvent.data.message = items.map(toString).join(' ')
-	this.broadcastEvent('minecraft:display_chat_event', chatEvent)
+	const chatEvent        = this.createEventData('minecraft:display_chat_event');
+	chatEvent.data.message = items.map(toString).join(' ');
+	this.broadcastEvent('minecraft:display_chat_event', chatEvent);
 };

@@ -1,18 +1,17 @@
 {
     "format_version": 2,
     "header": {
-        "description": "Gather and display various player statistics",
-        "name": "Player Statistics v1.0.2",
-        "uuid": "0a07014a-3f13-4749-9bf2-969aaead8bb6",
-        "min_engine_version": [ 1, 17, 0 ],
-        "version": [ 1, 0, 2 ]
+        "description": "§av1.0.4 §f| §2by RogueProeliator §f| §fGather and display various player statistics",
+        "name": "§bBedrock Player Statistics",
+        "uuid": "88acbd0b-1633-475c-b5d4-b0c71caf12d8",
+        "min_engine_version": [ 1, 17, 10 ],
+        "version": [ 1, 0, 4 ]
     },    
     "modules": [
         {
-            "description": "Created by RogueProeliator",
             "type": "data",
-			"uuid": "079ac3ab-0436-4c15-a1aa-7c02236efc87",
-            "version": [ 1, 0, 2 ]
+			"uuid": "b69fd596-e68e-4388-8620-1e229d883f9b",
+            "version": [ 1, 0, 4 ]
         }
     ]
 }
