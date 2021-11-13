@@ -7,13 +7,15 @@ let globalVars = {};
 globalVars.updateFreqTicks    = 1200;
 globalVars.trackMovementTicks = 600;
 
-globalVars.trackPlayTimeStats = true;
+globalVars.trackPlayTimeStats = false;
 globalVars.afkStartMins       = 5;
 
-globalVars.playTimeRewardUsed = true;
+globalVars.playTimeRewardUsed = false;
 globalVars.playTimeAwardMin   = 30;
 globalVars.playTimeAwardId    = "minecraft:diamond";
 
+globalVars.trackDeathStats    = false;
+globalVars.trackMurderStats   = true;
 globalVars.trackBlockStats    = true;
 globalVars.trackMobsKilled    = true;
 
@@ -99,17 +101,18 @@ system.onEntityDeath = function(eventData) {
         
         // record the death in the death counter scoreboard
         // ensure that all of the scoreboards have been added for the player
-        this.executeCommand(`/scoreboard players add ${playerName} deathcount 1`, (commandData) => this.commandCallback(commandData));
+        if (globalVars.trackDeathStats === true)
+            this.executeCommand(`/scoreboard players add ${playerName} deathcount 1`, (commandData) => this.commandCallback(commandData));
         
         // if the killer was another player, record that now
-        if (eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player") {
+        if (globalVars.trackMurderStats === true && eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player") {
             let murdererName = this.getComponent(eventData.data.killer, "minecraft:nameable").data.name;
             this.executeCommand(`/scoreboard players add ${murdererName} murdercount 1`, (commandData) => this.commandCallback(commandData));
         }
 
         // send the message to the chat window for all players
         this.logToChat(`RIP ${playerName} @ ${positionCoords}`);
-    } else if (eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player" && globalVars.trackMobsKilled === true) {
+    } else if (globalVars.trackMobsKilled === true && eventData.data.killer && eventData.data.killer.__identifier__ == "minecraft:player") {
         // the player killed a mob of some kind...
         let playerStats = this.getPlayerStats(eventData.data.killer);
         
@@ -182,7 +185,7 @@ system.getPlayerStats = function(entity) {
 
 // this routine will update all of the cached player stats  to the proper scoreboards
 // (such as blocks broken and destroyed)
-system.updateAllPlayerStats = function(updatePosition) {
+system.updateAllPlayerStats = async function(updatePosition) {
     let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
     let playerCount   = onlinePlayers.length;
 
@@ -255,7 +258,7 @@ system.updateAllPlayerStats = function(updatePosition) {
 
 // will update the player positions (in their stats) for each online player on the
 // server... fires off asynchronously so as not to block ticks
-system.updateAllPlayerPos = function() {
+system.updateAllPlayerPos = async function() {
     try {
         let onlinePlayers = this.getEntitiesFromQuery(globalVars.playersQuery);
         let playerCount   = onlinePlayers.length;
