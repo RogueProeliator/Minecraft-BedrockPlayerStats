@@ -3,7 +3,7 @@
 	"animation_controllers": {
 	   "controller.animation.playtime_counter": {
 			"states": {
-				"default_state": {
+				"default": {
 					"transitions": [ 
 						{ "is_afk": "!query.is_moving" },
 						{ "not_afk": "query.is_moving" }
@@ -11,15 +11,15 @@
 				},
 				
 				"is_afk": {
-					"transitions": [ { "default_state": "!query.can_fly" } ],
+					"transitions": [ { "not_afk": "query.is_moving" } ],
                     "on_entry": [ "/function playtime_afk" ]
 		   	  	},
 		        
 		         "not_afk": {
-					"transitions": [ { "default_state": "!query.can_fly" } ],
+					"transitions": [ { "is_afk": "!query.is_moving" } ],
                     "on_entry": [ "/function playtime_afk_reset" ]
 		   	    }
 	 		  }
-	      }
-	 }
+	    }
+	}
 }

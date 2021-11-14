@@ -1,0 +1,23 @@
+{
+	"format_version": "1.10.0",
+	"animation_controllers": {
+	   "controller.animation.playtime_counter_init": {
+		"initial_state": "alive",
+		"states": {
+			"alive": {
+				"animations": ["playtime_counter_run"],
+				"transitions": [
+					{ "dead": "!query.is_alive" }
+				]
+			},
+			"dead": {
+				"transitions": [
+					{
+						"alive": "query.is_alive"
+					}
+				]
+			}
+		}
+	    }
+	}
+}

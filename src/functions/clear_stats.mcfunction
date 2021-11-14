@@ -1,6 +1,12 @@
 scoreboard objectives remove deathcount
 scoreboard objectives remove murdercount
 
+scoreboard objectives remove is_moving
+scoreboard objectives remove playtime_timer
+scoreboard objectives remove afk_timer
+scoreboard objectives remove playtime_award_m
+scoreboard objectives remove playtime_award_b
+
 scoreboard objectives remove is_afk
 scoreboard objectives remove playtime_minutes
 scoreboard objectives remove afk_minutes
@@ -13,6 +19,12 @@ scoreboard objectives remove blocks_placed
 
 scoreboard objectives add deathcount dummy Deaths
 scoreboard objectives add murdercount dummy Murders
+
+scoreboard objectives add is_moving dummy is_moving
+scoreboard objectives add playtime_timer dummy playtime_timer
+scoreboard objectives add afk_timer dummy afk_timer
+scoreboard objectives add playtime_award_m dummy "Playtime Award Minutes"
+scoreboard objectives add playtime_award_b dummy "Playtime Award Balance"
 
 scoreboard objectives add is_afk dummy "Is AFK"
 scoreboard objectives add playtime_minutes dummy "Active Time"

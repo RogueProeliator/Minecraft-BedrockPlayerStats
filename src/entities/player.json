@@ -10,13 +10,18 @@
             "animate": [
                 "deaths_count",
                 "playtime_counter",
+                "playtime_init",
                 "sleep_oneplayer"
             ]
         },
         "animations": {
             "deaths_count": "controller.animation.deaths_count",
             "playtime_counter": "controller.animation.playtime_counter",
-            "sleep_oneplayer": "controller.animation.oneplayer_sleep"
+            "playtime_init": "controller.animation.playtime_counter_init",
+            "sleep_oneplayer": "controller.animation.oneplayer_sleep",
+
+            "playtime_counter_run": "animation.playtime_counter_run",
+            "sleep_oneplayer_run": "animation.sleep_oneplayer_run"
         }
       },
   

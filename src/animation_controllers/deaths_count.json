@@ -6,9 +6,7 @@
 			"states": {
 				"alive": {
 					"transitions": [
-						{
-							"dead": "!query.is_alive"
-						}
+						{ "dead": "!query.is_alive" }
 					],
 					"on_exit": [
 						"/scoreboard objectives add deathcount dummy Deaths",
@@ -17,9 +15,7 @@
 				},
 				"dead": {
 					"transitions": [
-						{
-							"alive": "query.is_alive"
-						}
+						{ "alive": "query.is_alive" }
 					]
 				}
 			}

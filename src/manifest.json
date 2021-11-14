@@ -1,17 +1,17 @@
 {
     "format_version": 2,
     "header": {
-        "description": "§av1.1.1 §f| §2by RogueProeliator §f| §fGather and display various player statistics",
+        "description": "§av1.1.4 §f| §2by RogueProeliator §f| §fGather and display various player statistics",
         "name": "§bBedrock Player Statistics",
         "uuid": "88acbd0b-1633-475c-b5d4-b0c71caf12d8",
         "min_engine_version": [ 1, 17, 40 ],
-        "version": [ 1, 1, 1 ]
+        "version": [ 1, 1, 11 ]
     },    
     "modules": [
         {
             "type": "data",
 			"uuid": "b69fd596-e68e-4388-8620-1e229d883f9b",
-            "version": [ 1, 1, 1 ]
+            "version": [ 1, 1, 11 ]
         }
     ]
 }
