@@ -1,0 +1,1 @@
+execute @s ~~~ tellraw @s {"rawtext":[{"text":"RIP "},{"text":" at "}, {"score":{"name":"*","objective":"position_x"}},{"text":", "}, {"score":{"name":"*","objective":"position_y"}},{"text":", "}, {"score":{"name":"*","objective":"position_z"}}]}

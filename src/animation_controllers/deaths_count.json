@@ -10,7 +10,9 @@
 					],
 					"on_exit": [
 						"/scoreboard objectives add deathcount dummy Deaths",
-						"/scoreboard players add @s deathcount 1"
+						"/scoreboard players add @s deathcount 1",
+						"/function pos_save",
+						"/function pos_show"
 					]
 				},
 				"dead": {
