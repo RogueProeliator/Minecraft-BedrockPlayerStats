@@ -1,0 +1,1 @@
+execute @s ~~~ tellraw @s {"rawtext":[{"text":"Your playtime award balance is "},{"score":{"name":"*","objective":"playtime_award_b"}},{"text":" diamonds"}]}
