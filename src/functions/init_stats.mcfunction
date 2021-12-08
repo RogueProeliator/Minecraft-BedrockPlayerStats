@@ -15,6 +15,8 @@ scoreboard objectives add is_afk dummy "Is AFK"
 scoreboard objectives add playtime_minutes dummy "Active Time"
 scoreboard objectives add afk_minutes dummy "AFK Time"
 
+scoreboard objectives add cur_level dummy "Current Level"
+
 scoreboard objectives add hostiles_killed dummy "Hostile Mobs Killed"
 scoreboard objectives add peaceful_killed dummy "Peaceful Mobs Killed"
 scoreboard objectives add blocks_broken dummy "Blocks Broken"
